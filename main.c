@@ -9,6 +9,7 @@ void v1_paypal_func2() {
 void v1_func1() {
 	printf("v1_func1\n");
 	printf("after v1_func1\n");
+	printf("fix bug v1\n");
 }
 
 int main() {
