@@ -2,6 +2,7 @@
 
 void v1_paypal_func2() {
 	printf("v1_paypal_func1\n");
+	printf("v1_paypal_func1\n");
 }
 
 
