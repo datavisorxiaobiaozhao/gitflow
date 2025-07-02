@@ -2,6 +2,7 @@
 
 void v1_func1() {
 	printf("v1_func1\n");
+	printf("after v1_func1\n");
 }
 
 int main() {
