@@ -88,5 +88,7 @@ jobs:
           # subject. The `headerPattern` should contain a regex where the capturing groups in parentheses
           # correspond to the parts listed in `headerPatternCorrespondence`.
           # See: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages/conventional-commits-parser#headerpattern
-          # headerPattern: '^(\w*)(?:\(([\w$.\-*/ ]*)\))?: (.*)$'
-          # headerPatternCorrespondence: type, scope, subject
+          # 自定义模式：要求 PR 标头必须包含 [xxx] 格式
+          # 格式：type: [TICKET-123] subject 或 type(scope): [TICKET-123] subject
+          headerPattern: '^(\w+)(?:\(([^)]+)\))?\s*:\s*\[([^\]]+)\]\s*(.+)$'
+          headerPatternCorrespondence: type, scope, ticket, subject
