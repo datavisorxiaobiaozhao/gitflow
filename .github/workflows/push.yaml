@@ -2,7 +2,7 @@ name: Push CI Check
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ main, master, develop, v* ]
     paths-ignore:
       - '**.md'
       - '**.txt'
