@@ -16,7 +16,12 @@ void v1_from_v2_datavis_demo() {
 	printf("v1_from_v2_datavis_demo\n");
 }
 
+void v2_from_xiaobiao_pr() {
+	printf("v2_from_xiaobiao_pr\n");
+}
+
 int main() {
     printf("Hello, World!\n");
+    v2_from_xiaobiao_pr();
     return 0;
 }
