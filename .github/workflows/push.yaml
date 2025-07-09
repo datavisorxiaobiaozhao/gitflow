@@ -11,7 +11,7 @@ on:
 jobs:
   push-ci-check:
     name: Push检测和构建
-    runs-on: ubuntu-latest
+    runs-on: xiaobiao-ubuntu
 
     steps:
       - name: 检出代码

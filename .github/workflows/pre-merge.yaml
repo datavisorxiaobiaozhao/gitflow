@@ -12,7 +12,7 @@ on:
 jobs:
   pre-merge-check:
     name: Pre-merge Detection
-    runs-on: ubuntu-latest
+    runs-on: xiaobiao-ubuntu
 
     steps:
       - name: 检出代码
