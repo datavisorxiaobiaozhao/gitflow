@@ -20,8 +20,13 @@ void v2_from_xiaobiao_pr() {
 	printf("v2_from_xiaobiao_pr\n");
 }
 
+void master_func() {
+	printf("master_func\n");
+}
+
 int main() {
     printf("Hello, World!\n");
     v2_from_xiaobiao_pr();
+	master_func();
     return 0;
 }
