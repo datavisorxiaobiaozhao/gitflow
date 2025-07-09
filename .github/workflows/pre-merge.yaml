@@ -2,7 +2,8 @@ name: Pre-merge CI Check
 
 on:
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, v* ]
+    branches-ignore: [ 'v*/*' ]  # 排除包含斜杠的分支
     types: [opened, synchronize, reopened]
 
 
