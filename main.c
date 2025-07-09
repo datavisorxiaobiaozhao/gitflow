@@ -16,7 +16,7 @@ void v1_from_v2_datavis_demo() {
 	printf("v1_from_v2_datavis_demo\n");
 }
 
-void master_func() {
+void master_demo_func() {
 	printf("master_func\n");
 }
 
