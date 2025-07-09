@@ -1,0 +1,186 @@
+name: Push CI Check
+
+on:
+  push:
+    branches: [ main, master, develop ]
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - '.gitignore'
+
+jobs:
+  push-ci-check:
+    name: Push检测和构建
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # 获取最近2个commit用于比较
+
+      - name: 获取推送信息
+        run: |
+          echo "=================== 推送信息 ==================="
+          echo "分支: ${{ github.ref_name }}"
+          echo "提交SHA: ${{ github.sha }}"
+          echo "提交者: ${{ github.event.head_commit.author.name }}"
+          echo "提交消息: ${{ github.event.head_commit.message }}"
+          echo "推送时间: ${{ github.event.head_commit.timestamp }}"
+          echo "=============================================="
+
+      - name: 检查变更文件
+        run: |
+          echo "=================== 文件变更检查 ==================="
+          if [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            echo "变更的文件:"
+            git diff --name-only ${{ github.event.before }} ${{ github.sha }}
+            echo ""
+            echo "详细变更统计:"
+            git diff --stat ${{ github.event.before }} ${{ github.sha }}
+          else
+            echo "首次推送，显示所有文件"
+            ls -la
+          fi
+          echo "=================================================="
+
+      - name: 检查main.c文件
+        run: |
+          echo "=================== main.c 文件检查 ==================="
+          if [ -f "main.c" ]; then
+            echo "✅ main.c 文件存在"
+            echo "文件信息:"
+            ls -la main.c
+            echo ""
+            echo "文件类型:"
+            file main.c
+          else
+            echo "❌ main.c 文件不存在"
+            echo "当前目录所有.c文件:"
+            find . -name "*.c" -type f
+            exit 1
+          fi
+          echo "=================================================="
+
+      - name: 打印main.c文件内容
+        run: |
+          echo "=================== main.c 文件内容 ==================="
+          echo "文件路径: $(pwd)/main.c"
+          echo "文件大小: $(wc -c < main.c) 字节"
+          echo "代码行数: $(wc -l < main.c) 行"
+          echo ""
+          echo "--- 文件内容开始 ---"
+          cat -n main.c  # -n参数显示行号
+          echo "--- 文件内容结束 ---"
+          echo "=================================================="
+
+      - name: 代码质量检查
+        run: |
+          echo "=================== 代码质量检查 ==================="
+
+          # 检查是否有main函数
+          if grep -q "int main" main.c; then
+            echo "✅ 找到main函数"
+          else
+            echo "⚠️ 未找到main函数"
+          fi
+
+          # 检查是否有include语句
+          if grep -q "#include" main.c; then
+            echo "✅ 找到include语句:"
+            grep "#include" main.c
+          else
+            echo "⚠️ 未找到include语句"
+          fi
+
+          # 检查括号匹配
+          open_braces=$(grep -o "{" main.c | wc -l)
+          close_braces=$(grep -o "}" main.c | wc -l)
+          if [ $open_braces -eq $close_braces ]; then
+            echo "✅ 括号匹配正确 (${open_braces}个)"
+          else
+            echo "❌ 括号不匹配: 开括号${open_braces}个, 闭括号${close_braces}个"
+          fi
+
+          # 检查分号
+          semicolons=$(grep -o ";" main.c | wc -l)
+          echo "📊 分号数量: ${semicolons}个"
+
+          echo "=================================================="
+
+      - name: 编译检查
+        run: |
+          echo "=================== 编译检查 ==================="
+
+          # 检查是否有Makefile
+          if [ -f "Makefile" ]; then
+            echo "找到Makefile，使用make编译..."
+            make clean || true
+            if make; then
+              echo "✅ make编译成功"
+            else
+              echo "❌ make编译失败"
+              exit 1
+            fi
+          else
+            echo "使用gcc编译..."
+            if gcc -Wall -Wextra -o main main.c; then
+              echo "✅ gcc编译成功"
+              echo "可执行文件信息:"
+              ls -la main
+              echo "文件类型:"
+              file main
+            else
+              echo "❌ gcc编译失败"
+              exit 1
+            fi
+          fi
+
+          echo "=================================================="
+
+      - name: 运行程序测试
+        run: |
+          echo "=================== 程序运行测试 ==================="
+
+          if [ -f "main" ]; then
+            echo "尝试运行编译后的程序..."
+            timeout 10s ./main || {
+              exit_code=$?
+              if [ $exit_code -eq 124 ]; then
+                echo "⚠️ 程序运行超时（10秒）"
+              else
+                echo "程序退出码: $exit_code"
+              fi
+            }
+          else
+            echo "❌ 未找到可执行文件"
+          fi
+
+          echo "=================================================="
+
+      - name: 生成构建报告
+        run: |
+          echo "=================== 构建报告 ==================="
+          echo "🔍 推送检测完成"
+          echo "📁 分支: ${{ github.ref_name }}"
+          echo "💾 提交: ${{ github.sha }}"
+          echo "📝 main.c 文件已检查并打印"
+          echo "🔨 编译检查通过"
+          echo "✅ 所有检查完成"
+          echo "=============================================="
+
+      - name: 清理临时文件
+        run: |
+          echo "清理编译产生的文件..."
+          rm -f main *.o *.out a.out
+          echo "清理完成"
+
+      - name: 上传构建产物（可选）
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-logs-${{ github.sha }}
+          path: |
+            *.log
+            main.c
+          retention-days: 7

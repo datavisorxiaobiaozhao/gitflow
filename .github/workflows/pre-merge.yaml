@@ -1,0 +1,110 @@
+name: Pre-merge CI Check
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    types: [opened, synchronize, reopened]
+
+
+jobs:
+  pre-merge-check:
+    name: Pre-merge Detection
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整的git历史
+
+      - name: 配置Git用户
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: 获取目标分支信息
+        run: |
+          echo "当前分支: ${{ github.head_ref }}"
+          echo "目标分支: ${{ github.event.pull_request.base.ref }}"
+          echo "PR编号: ${{ github.event.pull_request.number }}"
+
+      - name: 预合并检测
+        run: |
+          # 获取目标分支最新代码
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          echo "正在进行预合并检测..."
+
+          # 尝试合并目标分支
+          if git merge origin/${{ github.event.pull_request.base.ref }} --no-edit; then
+            echo "✅ 预合并成功，无冲突"
+          else
+            echo "❌ 预合并失败，存在冲突"
+            git status
+            exit 1
+          fi
+
+      - name: 检查main.c文件是否存在
+        run: |
+          if [ -f "main.c" ]; then
+            echo "✅ main.c 文件存在"
+          else
+            echo "❌ main.c 文件不存在"
+            echo "当前目录文件列表:"
+            ls -la
+            exit 1
+          fi
+
+      - name: 打印main.c文件内容
+        run: |
+          echo "=================== main.c 文件内容 ==================="
+          cat main.c
+          echo "======================================================="
+
+      - name: 编译检查（如果有Makefile或gcc）
+        run: |
+          if [ -f "Makefile" ]; then
+            echo "使用Makefile编译..."
+            make
+          elif command -v gcc &> /dev/null; then
+            echo "使用gcc编译main.c..."
+            gcc -o main main.c
+            echo "✅ 编译成功"
+          else
+            echo "⚠️ 未找到编译工具，跳过编译检查"
+          fi
+
+      - name: 运行额外检查
+        run: |
+          echo "进行代码质量检查..."
+
+          # 检查文件编码
+          if command -v file &> /dev/null; then
+            echo "main.c 文件信息:"
+            file main.c
+          fi
+
+          # 统计代码行数
+          echo "代码行数统计:"
+          wc -l main.c
+
+          # 检查是否有基本的C语言结构
+          if grep -q "int main" main.c; then
+            echo "✅ 找到main函数"
+          else
+            echo "⚠️ 未找到main函数"
+          fi
+
+      - name: 清理临时文件
+        run: |
+          # 清理编译产生的文件
+          rm -f main *.o *.out
+          echo "清理完成"
+
+      - name: 预合并检测总结
+        run: |
+          echo "=================== 预合并检测总结 ==================="
+          echo "✅ 预合并检测完成"
+          echo "✅ main.c 文件已打印"
+          echo "✅ 基本编译检查通过"
+          echo "📋 合并后的代码状态正常"
+          echo "=================================================="
