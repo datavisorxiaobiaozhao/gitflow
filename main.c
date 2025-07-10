@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#include <stdlib.h>
 
 void v1_paypal_func2() {
 	printf("v1_paypal_func1\n");
@@ -32,7 +32,14 @@ void master_func() {
 	printf("master_func\n");
 }
 
+void null_pointer_dereference() {
+	int *a = NULL;
+	*a = 0;
+	free(a);
+}
+
 int main() {
+	null_pointer_dereference();
     printf("Hello, World!\n");
     new_sonarqube_func();
     v2_from_xiaobiao_pr();
