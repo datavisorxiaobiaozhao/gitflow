@@ -30,19 +30,33 @@ jobs:
 
           # 安装必要的工具
           sudo apt-get update
-          sudo apt-get install -y build-essential
+          sudo apt-get install -y build-essential curl unzip
 
-      - name: 编译项目
+      - name: 下载SonarQube Build Wrapper
         run: |
-          echo "编译C语言项目..."
-          gcc -Wall -Wextra -g -o main main.c
-          echo "✅ 编译完成"
+          echo "下载SonarQube Build Wrapper..."
+          curl -sSLo build-wrapper-linux-x86.zip https://sonarcloud.io/static/cpp/build-wrapper-linux-x86.zip
+          unzip -o build-wrapper-linux-x86.zip
+          echo "✅ Build Wrapper下载完成"
+
+      - name: 使用Build Wrapper编译项目
+        run: |
+          echo "使用Build Wrapper编译C语言项目..."
+          # 清理之前的编译文件
+          rm -f main *.o *.out
+
+          # 使用build-wrapper包装编译过程
+          ./build-wrapper-linux-x86/build-wrapper-linux-x86-64 --out-dir bw-output gcc -Wall -Wextra -g -o main main.c
+          echo "✅ 编译完成，编译数据库已生成"
 
       - name: 运行SonarQube分析
         uses: SonarSource/sonarqube-scan-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.cfamily.compile-commands=bw-output/compile_commands.json
 
       - name: 等待SonarQube质量门检查
         uses: SonarSource/sonarqube-quality-gate-action@master
@@ -57,7 +71,7 @@ jobs:
           echo "🔍 代码质量分析完成"
           echo "📊 详细报告请查看SonarQube Cloud仪表板"
           echo "🔗 访问地址: https://sonarcloud.io"
-          echo "📁 项目Key: gitflow-c-project"
+          echo "📁 项目Key: gitflow"
 
           # 显示分析结果文件（如果存在）
           if [ -f ".scannerwork/report-task.txt" ]; then
@@ -78,4 +92,5 @@ jobs:
         if: always()
         run: |
           rm -f main *.o *.out
+          rm -rf build-wrapper-linux-x86 build-wrapper-linux-x86.zip bw-output
           echo "✅ 清理完成"
