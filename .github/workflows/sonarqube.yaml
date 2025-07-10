@@ -1,4 +1,4 @@
-name: SonarQube Cloud Analysis
+name: "SonarQube Cloud Analysis"
 
 on:
   push:
@@ -45,7 +45,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: 等待SonarQube质量门检查
-        uses: sonarqube-quality-gate-action@master
+        uses: SonarSource/sonarqube-quality-gate-action@master
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
