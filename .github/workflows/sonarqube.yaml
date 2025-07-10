@@ -1,0 +1,81 @@
+name: SonarQube Cloud Analysis
+
+on:
+  push:
+    branches: [ main, master, develop, v* ]
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - '.gitignore'
+  pull_request:
+    branches: [ main, master, develop, v* ]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  sonarqube-analysis:
+    name: SonarQube代码质量分析
+    runs-on: xiaobiao-ubuntu
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整Git历史，SonarQube需要
+
+      - name: 设置构建环境
+        run: |
+          echo "准备构建环境..."
+          # 确保gcc可用
+          gcc --version || (echo "安装gcc..." && sudo apt-get update && sudo apt-get install -y gcc)
+
+          # 安装必要的工具
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
+      - name: 编译项目
+        run: |
+          echo "编译C语言项目..."
+          gcc -Wall -Wextra -g -o main main.c
+          echo "✅ 编译完成"
+
+      - name: 运行SonarQube分析
+        uses: SonarSource/sonarqube-scan-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: 等待SonarQube质量门检查
+        uses: sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: 生成分析报告
+        if: always()
+        run: |
+          echo "=================== SonarQube分析报告 ==================="
+          echo "🔍 代码质量分析完成"
+          echo "📊 详细报告请查看SonarQube Cloud仪表板"
+          echo "🔗 访问地址: https://sonarcloud.io"
+          echo "📁 项目Key: gitflow-c-project"
+
+          # 显示分析结果文件（如果存在）
+          if [ -f ".scannerwork/report-task.txt" ]; then
+            echo ""
+            echo "📄 分析任务详情:"
+            cat .scannerwork/report-task.txt
+            echo ""
+
+            # 提取项目URL
+            if grep -q "dashboardUrl" .scannerwork/report-task.txt; then
+              dashboard_url=$(grep "dashboardUrl" .scannerwork/report-task.txt | cut -d'=' -f2-)
+              echo "📊 项目仪表板: $dashboard_url"
+            fi
+          fi
+          echo "=================================================="
+
+      - name: 清理临时文件
+        if: always()
+        run: |
+          rm -f main *.o *.out
+          echo "✅ 清理完成"
