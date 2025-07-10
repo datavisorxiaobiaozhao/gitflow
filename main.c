@@ -12,6 +12,10 @@ void v1_func1() {
 	printf("fix bug v1\n");
 }
 
+void new_sonarqube_func() {
+	printf("new_sonarqube_func\n");
+}
+
 void v1_from_v2_datavis_demo() {
 	printf("v1_from_v2_datavis_demo\n");
 }
@@ -30,6 +34,7 @@ void master_func() {
 
 int main() {
     printf("Hello, World!\n");
+    new_sonarqube_func();
     v2_from_xiaobiao_pr();
 	master_func();
     return 0;
